@@ -145,7 +145,7 @@ function copy (source, target, notify) {
 function destroy (fileordir, notify) {
   notify("remove", fileordir);
   try {
-    fs.remove(fileordir);
+    fs.removeSync(fileordir);
     return true;
   } catch (e) {
     notify("error", e);

@@ -4,7 +4,7 @@ var defaults = require("lodash/object/defaults");
 var fs = require("fs-extra");
 var path = require("path");
 var chokidar = require("chokidar");
-
+var fileCompare = require("file-compare");
 
 module.exports = function (source, target, opts, notify) {
   opts = defaults(opts || {}, {
@@ -37,16 +37,44 @@ module.exports = function (source, target, opts, notify) {
     .on("ready", notify.bind(undefined, "watch", source))
     .on("add", watcherCopy(source, target, opts, notify))
     .on("addDir", watcherCopy(source, target, opts, notify))
-    .on("change", watcherCopy(source, target, opts, notify))
+    .on("change", watcherChangeCopy(source, target, opts, notify))
     .on("unlink", watcherDestroy(source, target, opts, notify))
     .on("unlinkDir", watcherDestroy(source, target, opts, notify))
     .on("error", watcherError(opts, notify));
   }
 };
 
+function compareAndCopy(source, target, opts, notify) {
+
+    if (opts.compare) {
+        fileCompare.compare(source, target, function(same, err) {
+            if (!err && !same) {
+                copy(source, target, notify);
+            }
+            else if (err) {
+                notify("error", ["cannot compare", source, target]);
+            }
+            else {
+                notify("identical", [source, target]);
+            }
+        });
+        return true;
+    }
+    else {
+        return copy(source, target, notify);
+    }
+
+}
+
 function watcherCopy (source, target, opts, notify) {
   return function (f, stats) {
     copy(f, path.join(target, path.relative(source, f)), notify);
+  };
+}
+
+function watcherChangeCopy (source, target, opts, notify) {
+  return function (f, stats) {
+    compareAndCopy(f, path.join(target, path.relative(source, f)), opts, notify);
   };
 }
 
@@ -102,7 +130,7 @@ function mirror (source, target, opts, notify, depth) {
   } else if (sourceStat.isFile() && targetStat.isFile()) {
     // compare update-time before overwriting
     if (sourceStat.mtime > targetStat.mtime) {
-      return copy(source, target, notify);
+      return compareAndCopy(source, target, opts, notify);
     } else {
       return true;
     }

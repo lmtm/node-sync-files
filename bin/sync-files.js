@@ -11,13 +11,14 @@ var sync = require("../");
 var pkg = require("../package.json");
 
 var opts = {
-  "boolean": ["help", "delete", "watch", "version", "verbose", "notify-update"],
+  "boolean": ["help", "delete", "watch", "version", "verbose", "notify-update", "compare"],
   "string": ["depth"],
   "alias": {
     "help": "h",
     "watch": "w",
     "verbose": "v",
-    "depth": "d"
+    "depth": "d",
+    "compare": "c"
   },
   "type": {
     "depth": "number"
@@ -29,7 +30,8 @@ var opts = {
     "version": "Show version and exit",
     "verbose": "Moar output",
     "notify-update": "Enable update notification",
-    "depth": "Maximum depth if you have performance issues (not everywhere yet: only on existing mirrors and watch scenario)"
+    "depth": "Maximum depth if you have performance issues (not everywhere yet: only on existing mirrors and watch scenario)",
+    "compare": "Compare file contents before overwriting (and skip if same)"
   },
   "default": {
     "help": false,
@@ -37,7 +39,8 @@ var opts = {
     "delete": true,
     "verbose": false,
     "notify-update": true,
-    "depth": Infinity
+    "depth": Infinity,
+    "compare": false
   },
   "stopEarly": true,
   "unknown": function onUnknown (option) {
@@ -58,7 +61,8 @@ var notifyPriority = {
   "remove": "normal",
   "watch": "normal",
   "max-depth": "low",
-  "no-delete": "low"
+  "no-delete": "low",
+  "identical": "low"
 };
 
 function help () {
@@ -126,7 +130,8 @@ var root = process.cwd();
 sync(path.resolve(argv._[0]), path.resolve(argv._[1]), {
   "watch": argv.watch,
   "delete": argv.delete,
-  "depth": Number(argv.depth)
+  "depth": Number(argv.depth),
+  "compare": argv.compare
 }, function (event, data) {
   var priority = notifyPriority[event] || "low";
 
@@ -143,6 +148,10 @@ sync(path.resolve(argv._[0]), path.resolve(argv._[1]), {
 
     case "copy":
       console.log("%s %s to %s", chalk.bold("COPY"), chalk.yellow(path.relative(root, data[0])), chalk.yellow(path.relative(root, data[1])));
+      break;
+
+    case "identical":
+      console.log("%s %s to %s (identical)", chalk.bold("SKIP"), chalk.yellow(path.relative(root, data[0])), chalk.yellow(path.relative(root, data[1])));
       break;
 
     case "remove":

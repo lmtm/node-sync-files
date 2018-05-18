@@ -29,11 +29,11 @@
   },
   "homepage": "https://github.com/lmtm/node-sync-files",
   "dependencies": {
-    "chalk": "^0.5.1",
-    "chokidar": "^1.0.0-rc3",
-    "fs-extra": "^0.16.3",
-    "lodash": "^3.1.0",
-    "minimist": "^1.1.0",
-    "update-notifier": "^0.3.0"
+    "chalk": "^2.4.1",
+    "chokidar": "^2.0.3",
+    "fs-extra": "^6.0.1",
+    "lodash": "^4.17.10",
+    "minimist": "^1.2.0",
+    "update-notifier": "^2.5.0"
   }
 }

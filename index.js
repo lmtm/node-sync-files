@@ -1,6 +1,6 @@
 "use strict";
 
-var defaults = require("lodash/object/defaults");
+var defaults = require("lodash").defaults;
 var fs = require("fs-extra");
 var path = require("path");
 var chokidar = require("chokidar");

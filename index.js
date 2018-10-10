@@ -10,7 +10,20 @@ module.exports = function (source, target, opts, notify) {
   opts = defaults(opts || {}, {
     "watch": false,
     "delete": false,
-    "depth": Infinity
+    "depth": Infinity,
+    "exclude": []
+  });
+
+  if (typeof opts.exclude === "string") {
+    opts.exclude = [opts.exclude];
+  }
+
+  opts.mainSourcePath = source;
+  opts.mainTargetPath = target;
+
+  opts.excludeMap = {};
+  opts.exclude.forEach(item => {
+    opts.excludeMap[item] = true;
   });
 
   if (typeof opts.depth !== "number" || isNaN(opts.depth)) {
@@ -34,13 +47,13 @@ module.exports = function (source, target, opts, notify) {
       // TODO "ignore": opts.ignore
     })
     //.on("raw", console.log.bind(console, "raw"))
-    .on("ready", notify.bind(undefined, "watch", source))
-    .on("add", watcherCopy(source, target, opts, notify))
-    .on("addDir", watcherCopy(source, target, opts, notify))
-    .on("change", watcherCopy(source, target, opts, notify))
-    .on("unlink", watcherDestroy(source, target, opts, notify))
-    .on("unlinkDir", watcherDestroy(source, target, opts, notify))
-    .on("error", watcherError(opts, notify));
+      .on("ready", notify.bind(undefined, "watch", source))
+      .on("add", watcherCopy(source, target, opts, notify))
+      .on("addDir", watcherCopy(source, target, opts, notify))
+      .on("change", watcherCopy(source, target, opts, notify))
+      .on("unlink", watcherDestroy(source, target, opts, notify))
+      .on("unlinkDir", watcherDestroy(source, target, opts, notify))
+      .on("error", watcherError(opts, notify));
   }
 };
 
@@ -63,6 +76,10 @@ function watcherError (opts, notify) {
 }
 
 function mirror (source, target, opts, notify, depth) {
+  if (checkSourceIgnored(source, opts, notify) || checkTargetIgnored(target, opts, notify)) {
+    return true;
+  }
+
   // Specifc case where the very source is gone
   var sourceStat;
   try {
@@ -95,6 +112,9 @@ function mirror (source, target, opts, notify, depth) {
 
     // check for extraneous
     var deletedExtra = fs.readdirSync(target).every(function (f) {
+      if (checkTargetIgnored(path.join(target, f), opts, notify)) {
+        return true;
+      }
       return fs.existsSync(path.join(source, f)) || deleteExtra(path.join(target, f), opts, notify);
     });
 
@@ -150,5 +170,21 @@ function destroy (fileordir, notify) {
   } catch (e) {
     notify("error", e);
     return false;
+  }
+}
+
+function checkSourceIgnored(source, opts, notify) {
+  var relativeSourcePath = source.replace(opts.mainSourcePath, "").replace(/^[\///]/, "");
+  if (opts.excludeMap[relativeSourcePath]) {
+    notify("exclude-source", source);
+    return true;
+  }
+}
+
+function checkTargetIgnored(target, opts, notify) {
+  var relativeTargetPath = target.replace(opts.mainTargetPath, "").replace(/^[\///]/, "");
+  if (opts.excludeMap[relativeTargetPath]) {
+    notify("exclude-target", target);
+    return true;
   }
 }

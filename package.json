@@ -32,6 +32,7 @@
     "chalk": "^2.4.1",
     "chokidar": "^2.0.3",
     "fs-extra": "^6.0.1",
+    "ignore": "^5.0.2",
     "lodash": "^4.17.10",
     "minimist": "^1.2.0",
     "update-notifier": "^2.5.0"
